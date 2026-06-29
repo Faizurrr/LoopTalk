@@ -7,7 +7,7 @@
 ### Connect instantly. Remember everything.
 
 [![React](https://img.shields.io/badge/React_18-61dafb?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![Flask](https://img.shields.io/badge/Flask_3.0-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
 [![WebRTC](https://img.shields.io/badge/WebRTC-333?style=for-the-badge&logo=webrtc&logoColor=white)](https://webrtc.org)
 [![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
@@ -46,7 +46,7 @@ Most chat apps let you search messages. LoopTalk lets you *understand* them.
 | Feature | Details |
 |--------|---------|
 | 🔐 **Authentication** | JWT access + refresh tokens, bcrypt password hashing, secure sessions |
-| 💬 **Real-time chat** | Instant messaging via Flask-SocketIO with typing indicators and presence |
+| 💬 **Real-time chat** | Instant messaging via Socket.IO (python-socketio + FastAPI) with typing indicators and presence |
 | 📹 **1:1 Video calls** | Browser-native WebRTC — no plugins, no downloads, pure P2P |
 | 🎛️ **Call controls** | Mute, camera toggle, end call, incoming call toasts |
 | 📜 **Message history** | Persistent chat logs in PostgreSQL, paginated and searchable |
@@ -77,9 +77,9 @@ Most chat apps let you search messages. LoopTalk lets you *understand* them.
 |-------|-----------|---------|
 | **Frontend** | React 18 + Vite | Fast SPA, HMR in development |
 | **State** | Redux Toolkit | Auth state, call state, chat updates |
-| **Real-time** | Flask-SocketIO | Chat events, signaling, presence |
+| **Real-time** | python-socketio + FastAPI | Chat events, signaling, presence |
 | **Video** | WebRTC (browser-native) | P2P audio/video streams |
-| **Backend** | Python + Flask | REST API + socket server |
+| **Backend** | Python + FastAPI | REST API + socket server |
 | **Database** | PostgreSQL 15 | Users, messages, calls, summaries |
 | **Vector search** | pgvector | Semantic similarity inside Postgres |
 | **Jobs** | Celery + Redis | Async embeddings and summarization |
@@ -147,15 +147,66 @@ looptalk/
 │       │   ├── embedding_service.py  ← 🧠 OpenAI embeddings
 │       │   └── brain_service.py      ← 🧠 pgvector cosine search
 │       ├── tasks.py                  ← Celery async jobs
-│       ├── extensions.py
+│       ├── dependencies.py           ← FastAPI dependency injection
 │       └── config.py
 │
 └── README.md
 ```
 
+---
 
+## 🚀 Getting Started
 
+### Prerequisites
 
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL 15+ with `pgvector` extension
+- Redis
+
+### Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate       # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Copy and fill in your environment variables
+cp .env.example .env
+
+# Run database migrations
+alembic upgrade head
+
+# Start the FastAPI server (with uvicorn)
+uvicorn app.main:app --reload --port 8000
+
+# In a separate terminal — start the Celery worker
+celery -A app.tasks worker --loglevel=info
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Environment Variables
+
+```env
+# backend/.env
+DATABASE_URL=postgresql://user:password@localhost:5432/looptalk
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY=your-secret-key
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+---
 
 ## 🧠 AI Second Brain
 
@@ -204,7 +255,7 @@ Every chat message
 ### Database migration
 
 ```sql
--- Run once after flask db upgrade
+-- Run once after alembic upgrade head
 ALTER TABLE messages ADD COLUMN embedding vector(1536);
 
 CREATE INDEX ON messages
@@ -257,14 +308,14 @@ CREATE INDEX ON messages
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET` | `/api/chats/rooms` | List all rooms for current user |
-| `GET` | `/api/chats/:roomId/messages` | Get paginated message history |
+| `GET` | `/api/chats/{roomId}/messages` | Get paginated message history |
 | `POST` | `/api/chats/rooms` | Create or open a DM room |
 
 ### Summaries
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/summaries/:sessionId` | Get AI summary for a session |
+| `GET` | `/api/summaries/{sessionId}` | Get AI summary for a session |
 | `POST` | `/api/summaries/generate` | Manually trigger summary generation |
 
 ### Second Brain
@@ -299,6 +350,8 @@ CREATE INDEX ON messages
 }
 ```
 
+> 💡 FastAPI auto-generates interactive docs at `/docs` (Swagger UI) and `/redoc` — no extra setup needed.
+
 ---
 
 ### Socket.IO Events
@@ -323,20 +376,21 @@ CREATE INDEX ON messages
 <summary><strong>backend/requirements.txt</strong></summary>
 
 ```txt
-flask>=3.0.0
-flask-socketio>=5.3.0
-flask-jwt-extended>=4.6.0
-flask-sqlalchemy>=3.1.0
-flask-migrate>=4.0.0
-flask-bcrypt>=1.0.1
-psycopg2-binary>=2.9.9
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+python-socketio>=5.11.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+asyncpg>=0.29.0
 pgvector>=0.2.0
 celery>=5.3.0
 redis>=5.0.0
 openai>=1.0.0
 anthropic>=0.20.0
 python-dotenv>=1.0.0
-eventlet>=0.35.0
+pydantic-settings>=2.0.0
 ```
 
 </details>
@@ -399,7 +453,7 @@ git push origin feature/your-feature-name
 ```
 
 **Guidelines:**
-- Keep Flask routes in `/routes/`, socket logic in `/sockets/`, business logic in `/services/`
+- Keep FastAPI routers in `/routes/`, socket logic in `/sockets/`, business logic in `/services/`
 - Add tests for new API endpoints in `/tests/`
 - For large changes, open an issue first to discuss
 
@@ -415,7 +469,7 @@ git push origin feature/your-feature-name
 
 Made with ❤️ during summer 2025
 
-**React · Flask · PostgreSQL · WebRTC · pgvector · Claude API**
+**React · FastAPI · PostgreSQL · WebRTC · pgvector · Claude API**
 
 ⭐ Star this repo if you found it useful!
 
