@@ -1,16 +1,27 @@
-import { useState } from 'react'
-
+import "./App.css";
+import { Routes, Route } from "react-router-dom";
+import Home from "./Pages/Home";
+import Navbar from "./Components/Common/Navbar";
+import Footer from "./Components/Common/Footer";
+import Signuppage from "./Pages/Signuppage";
+import Signinpage from "./Pages/SinginPage";
+import Profile from "./Pages/Profile";
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-       <h1 class="text-3xl font-bold ">
-    LoopTalk Project!
-  </h1>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/SigninPage" element={<Signinpage />} /> 
+        <Route path="/SignupPage" element={<Signuppage />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
+
+      <Footer />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
