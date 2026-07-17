@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from src.lib.db import Base, engine
 from src.lib.Models.user import UserInfo  # ensures model is registered with Base
-from src.routes.auth import auth_router
+from src.routes.auth_routes import auth_router
 
 # Create all tables if they don't exist
 Base.metadata.create_all(bind=engine)
