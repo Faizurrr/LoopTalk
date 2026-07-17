@@ -2,6 +2,7 @@ from fastapi import HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from src.lib.Models.user import UserInfo
+
 from src.lib.security import hash_password, verify_password, create_access_token
 from src.schemas.auth import SignupRequest, SigninRequest, UserResponse, TokenResponse
 
@@ -55,4 +56,8 @@ def signin_user(credentials: SigninRequest, response: Response, db: Session):
         access_token=access_token,
         token_type="bearer",
         user=UserResponse(id=user.id, name=user.name, email=user.email),
-    )
+    ) 
+ #logout function to delete the cookie
+def logout_user(response: Response):
+    response.delete_cookie(key="access_token")
+    return {"message": "Logged out successfully"}
